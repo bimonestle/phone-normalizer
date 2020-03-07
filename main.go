@@ -1,5 +1,5 @@
 package main
 
-func normalizer(phone string) string {
-	return ""
+func normalize(phone string) string {
+	return phone
 }
