@@ -19,12 +19,24 @@ const (
 func main() {
 	psqlinfo := fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable", host, port, user, password)
 
-	// Connect to database
+	// Connect / Open to database
 	db, err := sql.Open("postgres", psqlinfo)
 	if err != nil {
 		panic(err)
 	}
+	err = createDB(db, dbname)
+	if err != nil {
+		panic(err)
+	}
 	db.Close()
+}
+
+func createDB(db *sql.DB, name string) error {
+	_, err := db.Exec("CREATE DATABASE " + name)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // To format the inputted phone number
