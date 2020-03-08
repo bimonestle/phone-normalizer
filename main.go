@@ -1,8 +1,31 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
 	"regexp"
+
+	_ "github.com/lib/pq"
 )
+
+const (
+	host     = "localhost"
+	port     = 5432
+	user     = "bimo"
+	password = "your-password"
+	dbname   = "phone_normalizer"
+)
+
+func main() {
+	psqlinfo := fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable", host, port, user, password)
+
+	// Connect to database
+	db, err := sql.Open("postgres", psqlinfo)
+	if err != nil {
+		panic(err)
+	}
+	db.Close()
+}
 
 // To format the inputted phone number
 // into numbers format only using regexp. No other characters e.g: (),-,_
