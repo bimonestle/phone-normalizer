@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"regexp"
 
 	_ "github.com/lib/pq"
@@ -11,24 +12,49 @@ import (
 const (
 	host     = "localhost"
 	port     = 5432
-	user     = "bimo"
+	user     = "rizalbimanto"
 	password = "your-password"
 	dbname   = "phone_normalizer"
 )
 
 func main() {
-	psqlinfo := fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable", host, port, user, password)
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable", host, port, user, password)
 
 	// Connect / Open to database
-	db, err := sql.Open("postgres", psqlinfo)
+	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		panic(err)
+		// panic(err)
+		log.Fatal("Fatel log: ", err)
 	}
-	err = createDB(db, dbname)
+	// err = createDB(db, dbname)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	err = resetDB(db, dbname)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	db.Close()
+
+	psqlInfo = fmt.Sprintf("%s dbname=%s", psqlInfo, dbname)
+	db, err = sql.Open("postgres", psqlInfo)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func resetDB(db *sql.DB, name string) error {
+	_, err := db.Exec("DROP DATABASE IF EXISTS " + name)
+	if err != nil {
+		return err
+	}
+	return createDB(db, name)
 }
 
 func createDB(db *sql.DB, name string) error {
