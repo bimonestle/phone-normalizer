@@ -47,10 +47,32 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	createPhoneNumbTable(db)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	insertPhone(db, "1234567890")
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
+}
+
+func insertPhone(db *sql.DB, phone string) (int, error) {
+	statement := `INSERT INTO phone_normalizer(value) VALUES($1)`
+	result, err := db.Exec(statement, phone)
+	if err != nil {
+		// will return an invalid ID and the error
+		return -1, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return -1, err
+	}
+
+	return int(id), nil
 }
 
 func createPhoneNumbTable(db *sql.DB) error {
