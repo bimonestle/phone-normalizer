@@ -63,7 +63,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = insertPhone(db, "(123) 456 7892")
+	id, err := insertPhone(db, "(123) 456 7892")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,10 +87,24 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	number, err := getPhone(db, id)
 	if err != nil {
-		log.Fatal("Error: ", err)
+		log.Fatal("", err)
 	}
+	fmt.Println("ID is: ", id, ", Number is: ", number)
 	// fmt.Println("id= ", id) // testing purpose
+}
+
+func getPhone(db *sql.DB, id int) (string, error) {
+	var number string
+	statement := `SELECT * FROM phone_numbers WHERE id=$1`
+	row := db.QueryRow(statement, id)
+	err := row.Scan(&id, &number)
+	if err != nil {
+		return "", nil
+	}
+
+	return number, nil
 }
 
 func insertPhone(db *sql.DB, phone string) (int, error) {
