@@ -30,6 +30,9 @@ func main() {
 	// if err != nil {
 	// 	panic(err)
 	// }
+
+	// If this part is commented because it has resetDB(db, dbname)
+	// so that the id won't be incremented.
 	err = resetDB(db, dbname)
 	if err != nil {
 		log.Fatal(err)
@@ -52,27 +55,53 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	insertPhone(db, "1234567890")
+	_, err = insertPhone(db, "1234567890")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = insertPhone(db, "123 456 7891")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = insertPhone(db, "(123) 456 7892")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = insertPhone(db, "(123) 456-7893")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = insertPhone(db, "123-456-7894")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = insertPhone(db, "123-456-7890")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = insertPhone(db, "1234567892")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = insertPhone(db, "(123)456-7892")
+	if err != nil {
+		log.Fatal(err)
+	}
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
+	// fmt.Println("id= ", id) // testing purpose
 }
 
 func insertPhone(db *sql.DB, phone string) (int, error) {
-	statement := `INSERT INTO phone_normalizer(value) VALUES($1)`
-	result, err := db.Exec(statement, phone)
+	statement := `INSERT INTO phone_numbers(value) VALUES($1) RETURNING id;`
+	var id int
+	err := db.QueryRow(statement, phone).Scan(&id)
 	if err != nil {
 		// will return an invalid ID and the error
 		return -1, err
 	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return -1, err
-	}
-
-	return int(id), nil
+	return id, nil
 }
 
 func createPhoneNumbTable(db *sql.DB) error {
