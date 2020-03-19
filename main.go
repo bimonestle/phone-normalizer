@@ -32,82 +32,49 @@ func main() {
 		log.Fatal(reset)
 	}
 
-	db, err := sql.Open("postgres", psqlInfo)
+	db, err := phonedb.Open("postgres", psqlInfo)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(nil, err)
 	}
 	defer db.Close()
 
-	err = db.Ping()
-	if err != nil {
+	if err := db.Seed(); err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = insertPhone(db, "1234567890")
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = insertPhone(db, "123 456 7891")
-	if err != nil {
-		log.Fatal(err)
-	}
-	id, err := insertPhone(db, "(123) 456 7892")
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = insertPhone(db, "(123) 456-7893")
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = insertPhone(db, "123-456-7894")
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = insertPhone(db, "123-456-7890")
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = insertPhone(db, "1234567892")
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = insertPhone(db, "(123)456-7892")
-	if err != nil {
-		log.Fatal(err)
-	}
-	number, err := getPhone(db, id)
-	if err != nil {
-		log.Fatal("", err)
-	}
-	fmt.Println("ID is: ", id, ", Number is: ", number) // testing purpose
-	// fmt.Println("id= ", id) // testing purpose
+	// number, err := getPhone(db, id)
+	// if err != nil {
+	// 	log.Fatal("", err)
+	// }
+	// fmt.Println("ID is: ", id, ", Number is: ", number) // testing purpose
+	// // fmt.Println("id= ", id) // testing purpose
 
-	phones, err := allPhones(db)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, p := range phones {
-		fmt.Printf("Working on...%+v\n", p)
-		number := normalize(p.number)
-		if number != p.number {
-			fmt.Println("Updating or removing...", number)
-			existing, err := findPhone(db, number)
-			if err != nil {
-				log.Fatal(err)
-			}
+	// phones, err := allPhones(db)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// for _, p := range phones {
+	// 	fmt.Printf("Working on...%+v\n", p)
+	// 	number := normalize(p.number)
+	// 	if number != p.number {
+	// 		fmt.Println("Updating or removing...", number)
+	// 		existing, err := findPhone(db, number)
+	// 		if err != nil {
+	// 			log.Fatal(err)
+	// 		}
 
-			if existing != nil {
-				// delete this number
-				deletePhone(db, p.id)
-			} else {
-				// update this number
-				p.number = number
-				updatePhone(db, p)
-			}
-		} else {
-			fmt.Println("No changes required")
-		}
-	}
+	// 		if existing != nil {
+	// 			// delete this number
+	// 			deletePhone(db, p.id)
+	// 		} else {
+	// 			// update this number
+	// 			p.number = number
+	// 			updatePhone(db, p)
+	// 		}
+	// 	} else {
+	// 		fmt.Println("No changes required")
+	// 	}
+	// }
 }
 
 func getPhone(db *sql.DB, id int) (string, error) {
@@ -177,17 +144,6 @@ func allPhones(db *sql.DB) ([]phone, error) {
 		return nil, err
 	}
 	return ret, nil
-}
-
-func insertPhone(db *sql.DB, phone string) (int, error) {
-	statement := `INSERT INTO phone_numbers(value) VALUES($1) RETURNING id;`
-	var id int
-	err := db.QueryRow(statement, phone).Scan(&id)
-	if err != nil {
-		// will return an invalid ID and the error
-		return -1, err
-	}
-	return id, nil
 }
 
 // To format the inputted phone number
