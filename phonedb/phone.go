@@ -1,6 +1,17 @@
 package phonedb
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+
+	_ "github.com/lib/pq"
+)
+
+// Phone represents the phone_numbers table in the DB
+type Phone struct {
+	ID     int
+	Number string
+}
 
 func Open(driverName, dataSource string) (*DB, error) {
 	db, err := sql.Open(driverName, dataSource)
@@ -46,6 +57,58 @@ func insertPhone(db *sql.DB, phone string) (int, error) {
 		return -1, err
 	}
 	return id, nil
+}
+
+func (db *DB) AllPhones() ([]Phone, error) {
+	statement := `SELECT id, value FROM phone_numbers`
+	rows, err := db.db.Query(statement)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ret []Phone
+	for rows.Next() {
+		var p Phone
+		if err := rows.Scan(&p.ID, &p.Number); err != nil {
+			return nil, err
+		}
+		ret = append(ret, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func (db *DB) FindPhone(number string) (*Phone, error) {
+	fmt.Println("findPhone()")
+	var p Phone
+	statement := `SELECT * FROM phone_numbers WHERE value=$1`
+	row := db.db.QueryRow(statement, number)
+	err := row.Scan(&p.ID, &p.Number)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+	return &p, nil
+}
+
+func (db *DB) UpdatePhone(p *Phone) error {
+	fmt.Println("updatePhone()")
+	statement := `UPDATE phone_numbers SET value=$2 WHERE id=$1`
+	_, err := db.db.Exec(statement, p.ID, p.Number)
+	return err
+}
+
+func (db *DB) DeletePhone(id int) error {
+	fmt.Println("deletePhone()")
+	statement := `DELETE FROM phone_numbers WHERE id=$1`
+	_, err := db.db.Exec(statement, id)
+	return err
 }
 
 // To handle setting up the database
@@ -104,4 +167,16 @@ func createDB(db *sql.DB, name string) error {
 		return err
 	}
 	return nil
+}
+
+func getPhone(db *sql.DB, id int) (string, error) {
+	var number string
+	statement := `SELECT * FROM phone_numbers WHERE id=$1`
+	row := db.QueryRow(statement, id)
+	err := row.Scan(&id, &number)
+	if err != nil {
+		return "", nil
+	}
+
+	return number, nil
 }

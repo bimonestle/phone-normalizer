@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"regexp"
@@ -42,108 +41,28 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// number, err := getPhone(db, id)
-	// if err != nil {
-	// 	log.Fatal("", err)
-	// }
-	// fmt.Println("ID is: ", id, ", Number is: ", number) // testing purpose
-	// // fmt.Println("id= ", id) // testing purpose
-
-	// phones, err := allPhones(db)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// for _, p := range phones {
-	// 	fmt.Printf("Working on...%+v\n", p)
-	// 	number := normalize(p.number)
-	// 	if number != p.number {
-	// 		fmt.Println("Updating or removing...", number)
-	// 		existing, err := findPhone(db, number)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-
-	// 		if existing != nil {
-	// 			// delete this number
-	// 			deletePhone(db, p.id)
-	// 		} else {
-	// 			// update this number
-	// 			p.number = number
-	// 			updatePhone(db, p)
-	// 		}
-	// 	} else {
-	// 		fmt.Println("No changes required")
-	// 	}
-	// }
-}
-
-func getPhone(db *sql.DB, id int) (string, error) {
-	var number string
-	statement := `SELECT * FROM phone_numbers WHERE id=$1`
-	row := db.QueryRow(statement, id)
-	err := row.Scan(&id, &number)
+	phones, err := db.AllPhones()
 	if err != nil {
-		return "", nil
+		log.Fatal(err)
 	}
-
-	return number, nil
-}
-
-func findPhone(db *sql.DB, number string) (*phone, error) {
-	fmt.Println("findPhone()")
-	var p phone
-	statement := `SELECT * FROM phone_numbers WHERE value=$1`
-	row := db.QueryRow(statement, number)
-	err := row.Scan(&p.id, &p.number)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
+	for _, p := range phones {
+		fmt.Printf("Working on...%+v\n", p)
+		number := normalize(p.Number)
+		if number != p.Number {
+			fmt.Println("Updating or removing...", number)
+			existing, err := db.FindPhone(number)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if existing != nil {
+				db.DeletePhone(p.ID)
+			} else {
+				db.UpdatePhone(&p)
+			}
 		} else {
-			return nil, err
+			fmt.Println("No changes required")
 		}
 	}
-	return &p, nil
-}
-
-func updatePhone(db *sql.DB, p phone) error {
-	fmt.Println("updatePhone()")
-	statement := `UPDATE phone_numbers SET value=$2 WHERE id=$1`
-	_, err := db.Exec(statement, p.id, p.number)
-	return err
-}
-
-func deletePhone(db *sql.DB, id int) error {
-	fmt.Println("deletePhone()")
-	statement := `DELETE FROM phone_numbers WHERE id=$1`
-	_, err := db.Exec(statement, id)
-	return err
-}
-
-type phone struct {
-	id     int
-	number string
-}
-
-func allPhones(db *sql.DB) ([]phone, error) {
-	statement := `SELECT id, value FROM phone_numbers`
-	rows, err := db.Query(statement)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var ret []phone
-	for rows.Next() {
-		var p phone
-		if err := rows.Scan(&p.id, &p.number); err != nil {
-			return nil, err
-		}
-		ret = append(ret, p)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return ret, nil
 }
 
 // To format the inputted phone number
