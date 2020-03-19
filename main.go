@@ -6,6 +6,8 @@ import (
 	"log"
 	"regexp"
 
+	"github.com/bimonestle/go-exercise-projects/08.Phone-Number-Normalizer/phone/phonedb"
+
 	_ "github.com/lib/pq"
 )
 
@@ -19,28 +21,18 @@ const (
 
 func main() {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable", host, port, user, password)
-
-	// Connect / Open to database
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		// panic(err)
-		log.Fatal("Fatel log: ", err)
+	reset := phonedb.Reset("postgres", psqlInfo, dbname)
+	if reset != nil {
+		log.Fatal(reset)
 	}
-	// err = createDB(db, dbname)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// If this part is commented because it has resetDB(db, dbname)
-	// so that the id won't be incremented.
-	err = resetDB(db, dbname)
-	if err != nil {
-		log.Fatal(err)
-	}
-	db.Close()
 
 	psqlInfo = fmt.Sprintf("%s dbname=%s", psqlInfo, dbname)
-	db, err = sql.Open("postgres", psqlInfo)
+	reset = phonedb.Migrate("postgres", psqlInfo)
+	if reset != nil {
+		log.Fatal(reset)
+	}
+
+	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,10 +43,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	createPhoneNumbTable(db)
-	if err != nil {
-		log.Fatal(err)
-	}
 	_, err = insertPhone(db, "1234567890")
 	if err != nil {
 		log.Fatal(err)
@@ -200,33 +188,6 @@ func insertPhone(db *sql.DB, phone string) (int, error) {
 		return -1, err
 	}
 	return id, nil
-}
-
-func createPhoneNumbTable(db *sql.DB) error {
-	statement := `
-		CREATE TABLE IF NOT EXISTS phone_numbers (
-			id SERIAL,
-			value VARCHAR(255)
-		)
-	`
-	_, err := db.Exec(statement)
-	return err
-}
-
-func resetDB(db *sql.DB, name string) error {
-	_, err := db.Exec("DROP DATABASE IF EXISTS " + name)
-	if err != nil {
-		return err
-	}
-	return createDB(db, name)
-}
-
-func createDB(db *sql.DB, name string) error {
-	_, err := db.Exec("CREATE DATABASE " + name)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // To format the inputted phone number
