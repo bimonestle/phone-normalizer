@@ -107,19 +107,14 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
+
 			if existing != nil {
 				// delete this number
-				deletePhone(db, id)
-				if err != nil {
-					log.Fatal(err)
-				}
+				deletePhone(db, p.id)
 			} else {
 				// update this number
 				p.number = number
 				updatePhone(db, p)
-				if err != nil {
-					log.Fatal(err)
-				}
 			}
 		} else {
 			fmt.Println("No changes required")
@@ -140,25 +135,30 @@ func getPhone(db *sql.DB, id int) (string, error) {
 }
 
 func findPhone(db *sql.DB, number string) (*phone, error) {
+	fmt.Println("findPhone()")
 	var p phone
 	statement := `SELECT * FROM phone_numbers WHERE value=$1`
-	row := db.QueryRow(statement, &p.number)
+	row := db.QueryRow(statement, number)
 	err := row.Scan(&p.id, &p.number)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
+		} else {
+			return nil, err
 		}
 	}
 	return &p, nil
 }
 
 func updatePhone(db *sql.DB, p phone) error {
+	fmt.Println("updatePhone()")
 	statement := `UPDATE phone_numbers SET value=$2 WHERE id=$1`
 	_, err := db.Exec(statement, p.id, p.number)
 	return err
 }
 
 func deletePhone(db *sql.DB, id int) error {
+	fmt.Println("deletePhone()")
 	statement := `DELETE FROM phone_numbers WHERE id=$1`
 	_, err := db.Exec(statement, id)
 	return err
